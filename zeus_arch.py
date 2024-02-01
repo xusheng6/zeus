@@ -3,7 +3,7 @@ from binaryninja.architecture import Architecture
 from binaryninja.function import RegisterInfo, InstructionInfo, InstructionTextToken
 from binaryninja.enums import InstructionTextTokenType, BranchType
 
-from .zeus import instructions
+from .zeus import instructions, OperandRegisterLow, OperandRegisterHigh, OperandImmediate, OperandPC, OperandDP, OperandData
 
 class Zeus(Architecture):
     name = 'zeus'
@@ -47,6 +47,17 @@ class Zeus(Architecture):
 
         return result
 
+    def get_operand_tokens(self, operand):
+        result = []
+        if isinstance(operand, OperandRegisterLow) or isinstance(operand, OperandRegisterHigh):
+            result.append(InstructionTextToken(InstructionTextTokenType.RegisterToken, 'r%d' % operand.reg_index))
+        elif isinstance(operand, OperandImmediate):
+            result.append(InstructionTextToken(InstructionTextTokenType.IntegerToken, '0x%x' % operand.value, operand.value))
+        else:
+            result.append(InstructionTextToken(InstructionTextTokenType.TextToken, operand.text))
+        return result
+
+
     def get_instruction_text(self, data, addr):
         opcode = data[0]
         inst_data = data
@@ -64,14 +75,32 @@ class Zeus(Architecture):
         self.opcode_xor_keys[addr + inst.size] = inst.key
 
         result = []
-        result.append(InstructionTextToken(InstructionTextTokenType.InstructionToken, inst.text))
-        result.append(InstructionTextToken(InstructionTextTokenType.TextToken, ' '))
+        opcode_text = inst.text
+        if (len(inst.operands)) > 0:
+            operand = inst.operands[0]
+            operand_size = 0
+            if isinstance(operand, OperandPC) or isinstance(operand, OperandDP) or isinstance(operand, OperandData):
+                operand_size = operand.data_size.value
+            else:
+                operand_size = operand.op_size
 
-        for i in range(len(inst.operands)):
-            operand = inst.operands[i]
-            result.append(InstructionTextToken(InstructionTextTokenType.TextToken, operand.text))
-            if i != len(inst.operands) - 1:
-                result.append(InstructionTextToken(InstructionTextTokenType.OperandSeparatorToken, ', '))
+            if operand_size == 1:
+                opcode_text += '.b'
+            elif operand_size == 2:
+                opcode_text += '.w'
+            elif operand_size == 4:
+                opcode_text += '.d'
+        result.append(InstructionTextToken(InstructionTextTokenType.InstructionToken, opcode_text))
+
+        # process operands
+        if len(inst.operands) > 0:
+            result.append(InstructionTextToken(InstructionTextTokenType.TextToken, ' '))
+
+            for i in range(len(inst.operands)):
+                operand = inst.operands[i]
+                result.extend(self.get_operand_tokens(operand))
+                if i != len(inst.operands) - 1:
+                    result.append(InstructionTextToken(InstructionTextTokenType.OperandSeparatorToken, ', '))
 
         return result, inst.size
 
