@@ -13,6 +13,9 @@ class Zeus(Architecture):
     instr_alignment = 1
     max_instr_length = 255
 
+    # supress warning
+    stack_pointer = "SP"
+
     opcode_xor_keys = {}
 
     def get_instruction_info(self, data, addr):
