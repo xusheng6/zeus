@@ -65,6 +65,13 @@ class Zeus(Architecture):
 
         result = []
         result.append(InstructionTextToken(InstructionTextTokenType.InstructionToken, inst.text))
+        result.append(InstructionTextToken(InstructionTextTokenType.TextToken, ' '))
+
+        for i in range(len(inst.operands)):
+            operand = inst.operands[i]
+            result.append(InstructionTextToken(InstructionTextTokenType.TextToken, operand.text))
+            if i != len(inst.operands) - 1:
+                result.append(InstructionTextToken(InstructionTextTokenType.OperandSeparatorToken, ', '))
 
         return result, inst.size
 

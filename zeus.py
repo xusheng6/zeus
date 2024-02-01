@@ -173,7 +173,7 @@ class Instruction:
         for operand in self.operands:
             operand.parse(code[self.size:])
             self.size += operand.op_size
-            self.text += " " + operand.text
+            # self.text += " " + operand.text
         # print("size: " + str(self.size))
         # print("operand count: " + str(len(self.operands)))
         # Handle special case for nop of larger than one byte
