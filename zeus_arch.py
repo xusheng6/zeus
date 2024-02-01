@@ -40,6 +40,10 @@ class Zeus(Architecture):
 
         if inst.text == 'exit':
             result.add_branch(BranchType.FunctionReturn)
+        elif inst.text.startswith('loop'):
+            disp = inst.operands[1].value
+            result.add_branch(BranchType.TrueBranch, addr + inst.size - disp)
+            result.add_branch(BranchType.FalseBranch, addr + inst.size)
 
         return result
 
